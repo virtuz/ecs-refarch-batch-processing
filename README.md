@@ -123,3 +123,23 @@ The following sections explain all of the resources created by the CloudFormatio
 
 ##License
 This reference architecture sample is licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
+## Alternative implementation
+In order practise, GitHub action pipelines and terraform code going to be added.
+
+### Plan
+- [ ] bootstrap terraform: create s3 bucket / dynamo db for terraform state
+- [ ] bootstrap github actions: create pipeline to run terraform plan/apply
+- [ ] terraform: add ECR registry
+- [ ] github actions: create pipeline to build and publish image
+- [ ] terraform: add all resources mentioned in reference architecture
+- [ ] github actions: create manual pipeline to upload image from provided url to input s3
+- [ ] end to end testing
+
+### Running the example
+Follow these steps to run the template.
+
+#### Step 1: Clone the Github repository
+To run the entire example, first clone the source repository, using the following command:
+
+  `$ git clone https://github.com/awslabs/ecs-refarch-batch-processing.git`
