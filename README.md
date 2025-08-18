@@ -128,7 +128,7 @@ This reference architecture sample is licensed under the Apache License, Version
 In order practise, GitHub action pipelines and terraform code going to be added.
 
 ### Plan
-- [ ] bootstrap terraform: create s3 bucket / dynamo db for terraform state
+- [x] bootstrap terraform: create s3 bucket / dynamo db for terraform state
 - [ ] bootstrap github actions: create pipeline to run terraform plan/apply
 - [ ] terraform: add ECR registry
 - [ ] github actions: create pipeline to build and publish image
@@ -139,7 +139,47 @@ In order practise, GitHub action pipelines and terraform code going to be added.
 ### Running the example
 Follow these steps to run the template.
 
+#### Step 0: Prerequsites
+```bash
+# Install AWS CLI
+sudo snap install aws-cli
+
+# Configuring command completion in the AWS CLI
+echo 'complete -C /snap/aws-cli/current/bin/aws_completer aws' >> ~/.bashrc
+
+# Then configure your credentials
+aws configure
+```
+
 #### Step 1: Clone the Github repository
 To run the entire example, first clone the source repository, using the following command:
+```bash
+git clone https://github.com/awslabs/ecs-refarch-batch-processing.git
+```
 
-  `$ git clone https://github.com/awslabs/ecs-refarch-batch-processing.git`
+#### Step 2: Bootstrap AWS resources for Terraform Backend via CloudFormation
+```bash
+# Move to infrastructure directory
+cd ecs-refarch-batch-processing/infrastructure
+
+# Create AWS resources for Terraform Backend
+aws cloudformation create-stack --stack-name terraform-bootstrap --template-body file://terraform-bootstrap.yaml
+```
+
+#### Step 3: Create whole dev env via terraform
+```bash
+# Save the backend config to a file
+aws cloudformation describe-stacks \
+  --stack-name terraform-bootstrap \
+  --query 'Stacks[0].Outputs[?OutputKey==`TerraformBackendConfig`].OutputValue' \
+  --output text > environments/dev/backend.tf
+
+# Move to dev env directory
+cd environments/dev
+
+# Initialize terraform
+terraform init
+
+# Create whole infrastructure
+terraform apply
+```

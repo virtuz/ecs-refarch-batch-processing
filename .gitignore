@@ -1,2 +1,5 @@
-# Virtual environments
+# Python virtual environments
 .venv/
+
+# Terraform
+.terraform*
