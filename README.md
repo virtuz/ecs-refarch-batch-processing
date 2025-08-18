@@ -129,7 +129,7 @@ In order practise, GitHub action pipelines and terraform code going to be added.
 
 ### Plan
 - [x] bootstrap terraform: create s3 bucket / dynamo db for terraform state
-- [ ] bootstrap github actions: create pipeline to run terraform plan/apply
+- [x] bootstrap github actions: create pipeline to run terraform plan/apply
 - [ ] terraform: add ECR registry
 - [ ] github actions: create pipeline to build and publish image
 - [ ] terraform: add all resources mentioned in reference architecture
@@ -149,28 +149,48 @@ echo 'complete -C /snap/aws-cli/current/bin/aws_completer aws' >> ~/.bashrc
 
 # Then configure your credentials
 aws configure
+
+# Install GitHub CLI if not already installed
+sudo snap install gh
+
+# Authenticate with GitHub
+gh auth login
 ```
 
 #### Step 1: Clone the Github repository
-To run the entire example, first clone the source repository, using the following command:
+To run the entire example, first fork the source repository, using the following command:
 ```bash
-git clone https://github.com/awslabs/ecs-refarch-batch-processing.git
+gh repo fork virtuz/ecs-refarch-batch-processing
 ```
 
-#### Step 2: Bootstrap AWS resources for Terraform Backend via CloudFormation
+#### Step 2: Bootstrap foundational AWS resources via CloudFormation
 ```bash
 # Move to infrastructure directory
 cd ecs-refarch-batch-processing/infrastructure
 
-# Create AWS resources for Terraform Backend
-aws cloudformation create-stack --stack-name terraform-bootstrap --template-body file://terraform-bootstrap.yaml
+# Create foundational AWS resources
+aws cloudformation create-stack \
+  --stack-name bootstrap \
+  --template-body file://bootstrap.yaml \
+  --capabilities CAPABILITY_NAMED_IAM
 ```
 
-#### Step 3: Create whole dev env via terraform
+#### Step 3: Setup GitHub actions
+```bash
+# Add the secret
+gh secret set AWS_ROLE_ARN --body $(\
+  aws cloudformation describe-stacks \
+    --stack-name bootstrap \
+    --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
+    --output text \
+)
+```
+
+#### Step ?: Create whole dev env via terraform
 ```bash
 # Save the backend config to a file
 aws cloudformation describe-stacks \
-  --stack-name terraform-bootstrap \
+  --stack-name bootstrap \
   --query 'Stacks[0].Outputs[?OutputKey==`TerraformBackendConfig`].OutputValue' \
   --output text > environments/dev/backend.tf
 
@@ -183,3 +203,11 @@ terraform init
 # Create whole infrastructure
 terraform apply
 ```
+
+### Useful references
+- https://docs.aws.amazon.com/cli/
+- https://docs.aws.amazon.com/cloudformation/
+- https://docs.github.com/en/actions
+- https://aws.amazon.com/blogs/security/use-iam-roles-to-connect-github-actions-to-actions-in-aws/
+- https://aws.amazon.com/blogs/security/techniques-for-writing-least-privilege-iam-policies/
+- https://aws.amazon.com/blogs/devops/integrating-with-github-actions-ci-cd-pipeline-to-deploy-a-web-app-to-amazon-ec2/
