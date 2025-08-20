@@ -131,7 +131,7 @@ In order practise, GitHub action pipelines and terraform code going to be added.
 - [x] bootstrap terraform: create s3 bucket / dynamo db for terraform state
 - [x] bootstrap github actions: create pipeline to run terraform plan/apply
 - [x] terraform: add ECR registry
-- [ ] github actions: create pipeline to build and publish image
+- [x] github actions: create pipeline to build and publish image
 - [ ] terraform: add all resources mentioned in reference architecture
 - [ ] github actions: create manual pipeline to upload image from provided url to input s3
 - [ ] end to end testing
