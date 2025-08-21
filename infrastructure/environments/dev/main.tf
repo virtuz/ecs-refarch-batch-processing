@@ -72,9 +72,7 @@ module "metric_alarm" {
   alarm_name          = "SQSQueueDepth"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   dimensions = {
-    queue = {
-      QueueName = module.sqs.queue_name
-    }
+    QueueName = module.sqs.queue_name
   }
   evaluation_periods = 1
   metric_name        = "ApproximateNumberOfMessagesVisible"
