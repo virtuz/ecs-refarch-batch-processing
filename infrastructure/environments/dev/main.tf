@@ -35,8 +35,25 @@ module "output_s3_bucket" {
 # SQSQueue - A SQS queue that holds messages containing the name of the uploaded object.
 # SQSDeadLetterQueue - A SQS dead letter queue for messages that was unsuccessfully handled.
 module "sqs" {
-  source     = "terraform-aws-modules/sqs/aws"
-  version    = "5.0.0"
-  name       = "${var.project_name}-sqs-${var.environment}"
-  create_dlq = true
+  source              = "terraform-aws-modules/sqs/aws"
+  version             = "5.0.0"
+  name                = "${var.project_name}-sqs-${var.environment}"
+  create_dlq          = true
+  create_queue_policy = true
+  queue_policy_statements = {
+    s3 = {
+      sid    = "Allow-send-message-from-S3"
+      effect = "Allow"
+      principals = [{
+        type        = "*"
+        identifiers = ["*"]
+      }]
+      actions = ["sqs:SendMessage"]
+      conditions = [{
+        test     = "ArnLike"
+        variable = "aws:SourceArn"
+        values   = ["arn:aws:s3:::${module.input_s3_bucket.s3_bucket_id}"]
+      }]
+    }
+  }
 }
