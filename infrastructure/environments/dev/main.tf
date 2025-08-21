@@ -57,3 +57,16 @@ module "sqs" {
     }
   }
 }
+# ECSCluster - An ECS cluster.
+module "ecs" {
+  source       = "terraform-aws-modules/ecs/aws"
+  version      = "6.2.2"
+  cluster_name = "${var.project_name}-ecs-${var.environment}"
+}
+# SQSCloudWatchAlarm - A CloudWatch Alarm for the SQS queue for the ApproximateNumberOfMessagesVisible metric.
+# ECSAutoScalingGroup - An Auto Scaling group used to create your instances.
+# InstanceSecurityGroup - Security Group to which your instances are added.
+# TaskDefinition - An ECS task definition that is started by the ECS service. The ECS task schedules a Docker container that copies the uploaded object and creates a thumbnail and a resized (1024x768) image file in the output S3 bucket.
+# ECSServiceRole - An IAM role assumed by the ECS service, which gives the service the right to register instances to an Elastic Load Balancer if needed.
+# EC2Role - An IAM role assumed by the EC2 instances, which gives them the right to register themselves with the ECS services.
+# ECSTaskRole - An IAM role assumed by the ECS task. This role gives the Docker container the right to upload and fetch objects to and from S3 as well as read and delete messages from the SQS queue. By using an ECS task role, the underlying EC2 instances do not need to be given access rights to the resources that the container uses. For more information about IAM roles for tasks, see IAM Roles for Tasks.

@@ -28,3 +28,8 @@ output "sqs_dead_letter_queue_name" {
   description = "SQS dead letter queue name"
   value       = module.sqs.dead_letter_queue_name
 }
+
+output "ecs_cluster_name" {
+  description = "ECS cluster name"
+  value       = module.ecs.cluster_name
+}
