@@ -92,8 +92,18 @@ module "ecs" {
   cluster_name = "${var.project_name}-ecs-${var.environment}"
   services = {
     image_processing = {
-      subnet_ids         = data.aws_subnets.default.ids
+      subnet_ids = sort(data.aws_subnets.default.ids)
+      # create_task_exec_policy = false
+      # create_security_group = false
       enable_autoscaling = false
+      # autoscaling_policies = {
+      #   queue_depth = {
+      #     policy_type = "TargetTrackingScaling"
+      #     target_tracking_scaling_policy_configuration = {
+
+      #     }
+      #   }
+      # }
       container_definitions = {
         worker = {
           cpu       = 10
@@ -120,6 +130,12 @@ module "ecs" {
           ]
         }
       }
+      security_group_egress_rules = {
+        all = {
+          ip_protocol = "-1"
+          cidr_ipv4   = "0.0.0.0/0"
+        }
+      }
     }
   }
 }
@@ -141,6 +157,11 @@ module "metric_alarm" {
   statistic          = "Average"
   threshold          = 5
   unit               = "Count"
+  alarm_actions      = ["arn:aws:autoscaling:us-west-2:435236256477:scalingPolicy:93b8e209-d4d3-43f3-b894-c071cc669e4b:resource/ecs/service/ecs-refarch-batch-processing-ecs-dev/image_processing:policyName/step5"] # manually created
+  # lifecycle {
+  #   ignore_changes = [alarm_actions]
+  # }
+
 }
 # ECSAutoScalingGroup - An Auto Scaling group used to create your instances.
 # InstanceSecurityGroup - Security Group to which your instances are added.
