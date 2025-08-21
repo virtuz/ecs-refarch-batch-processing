@@ -64,6 +64,26 @@ module "ecs" {
   cluster_name = "${var.project_name}-ecs-${var.environment}"
 }
 # SQSCloudWatchAlarm - A CloudWatch Alarm for the SQS queue for the ApproximateNumberOfMessagesVisible metric.
+module "metric_alarm" {
+  source  = "terraform-aws-modules/cloudwatch/aws//modules/metric-alarm"
+  version = "5.7.1"
+
+  alarm_description   = "Scale ECS Service based on SQS queue depth"
+  alarm_name          = "SQSQueueDepth"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  dimensions = {
+    queue = {
+      QueueName = module.sqs.queue_name
+    }
+  }
+  evaluation_periods = 1
+  metric_name        = "ApproximateNumberOfMessagesVisible"
+  namespace          = "AWS/SQS"
+  period             = 60
+  statistic          = "Average"
+  threshold          = 5
+  unit               = "Count"
+}
 # ECSAutoScalingGroup - An Auto Scaling group used to create your instances.
 # InstanceSecurityGroup - Security Group to which your instances are added.
 # TaskDefinition - An ECS task definition that is started by the ECS service. The ECS task schedules a Docker container that copies the uploaded object and creates a thumbnail and a resized (1024x768) image file in the output S3 bucket.

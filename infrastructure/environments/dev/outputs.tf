@@ -33,3 +33,8 @@ output "ecs_cluster_name" {
   description = "ECS cluster name"
   value       = module.ecs.cluster_name
 }
+
+output "cloudwatch_metric_alarm_id" {
+  description = "CloudWatch metric alarm ID"
+  value       = module.metric_alarm.cloudwatch_metric_alarm_id
+}
