@@ -26,6 +26,31 @@ module "input_s3_bucket" {
   version = "5.5.0"
   bucket  = "${var.project_name}-input-${var.environment}"
 }
+# ###Step 3: Create the S3 event trigger for the SQS queue
+# Go to the S3 Console in your AWS Account and select the S3 Input Bucket that the CloudFormation template created and go to Properties -> Events.
+# Configure an event notification to the SQS queue called SQSBatchQueue for the ObjectCreated (All) event and in the Suffix field enter "jpg".
+# You can learn more about configuring S3 event notifications [here](http://docs.aws.amazon.com/AmazonS3/latest/dev/NotificationHowTo.html).
+module "input_s3_bucket_notification" {
+  source  = "terraform-aws-modules/s3-bucket/aws//modules/notification"
+  version = "5.5.0"
+  bucket  = module.input_s3_bucket.s3_bucket_id
+  sqs_notifications = {
+    sqs = {
+      queue_arn     = module.sqs.queue_arn
+      events        = ["s3:ObjectCreated:*"]
+      filter_suffix = ".jpg"
+    }
+  }
+}
+# resource "aws_s3_bucket_notification" "bucket_notification" {
+#   bucket = aws_s3_bucket.bucket.id
+
+#   queue {
+#     queue_arn     = aws_sqs_queue.queue.arn
+#     events        = ["s3:ObjectCreated:*"]
+#     filter_suffix = ".log"
+#   }
+# }
 # myS3OutputBucket - An S3 bucket where resized objects are stored with keys thumbs/ and resized/.
 module "output_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
@@ -35,27 +60,27 @@ module "output_s3_bucket" {
 # SQSQueue - A SQS queue that holds messages containing the name of the uploaded object.
 # SQSDeadLetterQueue - A SQS dead letter queue for messages that was unsuccessfully handled.
 module "sqs" {
-  source              = "terraform-aws-modules/sqs/aws"
-  version             = "5.0.0"
-  name                = "${var.project_name}-sqs-${var.environment}"
-  create_dlq          = true
-  create_queue_policy = true
-  queue_policy_statements = {
-    s3 = {
-      sid    = "Allow-send-message-from-S3"
-      effect = "Allow"
-      principals = [{
-        type        = "*"
-        identifiers = ["*"]
-      }]
-      actions = ["sqs:SendMessage"]
-      conditions = [{
-        test     = "ArnLike"
-        variable = "aws:SourceArn"
-        values   = ["arn:aws:s3:::${module.input_s3_bucket.s3_bucket_id}"]
-      }]
-    }
-  }
+  source     = "terraform-aws-modules/sqs/aws"
+  version    = "5.0.0"
+  name       = "${var.project_name}-sqs-${var.environment}"
+  create_dlq = true
+  # create_queue_policy = true
+  # queue_policy_statements = {
+  #   s3 = {
+  #     sid    = "Allow-send-message-from-S3"
+  #     effect = "Allow"
+  #     principals = [{
+  #       type        = "*"
+  #       identifiers = ["*"]
+  #     }]
+  #     actions = ["sqs:SendMessage"]
+  #     conditions = [{
+  #       test     = "ArnLike"
+  #       variable = "aws:SourceArn"
+  #       values   = ["arn:aws:s3:::${module.input_s3_bucket.s3_bucket_id}"]
+  #     }]
+  #   }
+  # }
 }
 # ECSCluster - An ECS cluster.
 # TaskDefinition - An ECS task definition that is started by the ECS service. The ECS task schedules a Docker container that copies the uploaded object and creates a thumbnail and a resized (1024x768) image file in the output S3 bucket.
