@@ -138,6 +138,9 @@ Resources:
                   - iam:CreatePolicyVersion
                   - iam:DeletePolicyVersion
                   - iam:SetDefaultPolicyVersion
+                  - iam:TagPolicy
+                  - iam:UntagPolicy
+                  - iam:ListPolicyTags
                 Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/*'
               - Effect: Allow
                 Action:
@@ -157,6 +160,12 @@ Resources:
                   - iam:GetInstanceProfile
                   - iam:AddRoleToInstanceProfile
                   - iam:RemoveRoleFromInstanceProfile
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:ListRoleTags
+                  - iam:TagInstanceProfile
+                  - iam:UntagInstanceProfile
+                  - iam:ListInstanceProfileTags
                 Resource: 
                   - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
                   - !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/*'
