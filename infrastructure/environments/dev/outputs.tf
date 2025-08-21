@@ -18,3 +18,13 @@ output "s3_output_bucket_name" {
   description = "S3 bucket name for output images"
   value       = module.output_s3_bucket.s3_bucket_id
 }
+
+output "sqs_queue_name" {
+  description = "SQS queue name"
+  value       = module.sqs.queue_name
+}
+
+output "sqs_dead_letter_queue_name" {
+  description = "SQS dead letter queue name"
+  value       = module.sqs.dead_letter_queue_name
+}

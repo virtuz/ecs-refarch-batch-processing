@@ -20,11 +20,23 @@ module "ecr" {
     ]
   })
 }
+# myS3InputBucket - An S3 bucket where objects (images with a .jpg suffix) can be uploaded to trigger the resize.
 module "input_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.5.0"
+  bucket  = "${var.project_name}-input-${var.environment}"
 }
+# myS3OutputBucket - An S3 bucket where resized objects are stored with keys thumbs/ and resized/.
 module "output_s3_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.5.0"
+  bucket  = "${var.project_name}-output-${var.environment}"
+}
+# SQSQueue - A SQS queue that holds messages containing the name of the uploaded object.
+# SQSDeadLetterQueue - A SQS dead letter queue for messages that was unsuccessfully handled.
+module "sqs" {
+  source     = "terraform-aws-modules/sqs/aws"
+  version    = "5.0.0"
+  name       = "${var.project_name}-sqs-${var.environment}"
+  create_dlq = true
 }
