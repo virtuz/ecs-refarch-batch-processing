@@ -20,3 +20,7 @@ module "ecr" {
     ]
   })
 }
+module "input_s3_bucket" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "5.5.0"
+}

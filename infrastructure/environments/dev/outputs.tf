@@ -8,3 +8,8 @@ output "ecr_repository_name" {
   description = "ECR repository name"
   value       = module.ecr.repository_name
 }
+
+output "s3_input_bucket_name" {
+  description = "S3 bucket name for input images"
+  value       = module.input_s3_bucket.s3_bucket_id
+}
