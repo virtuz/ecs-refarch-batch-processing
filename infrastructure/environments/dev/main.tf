@@ -92,7 +92,8 @@ module "ecs" {
   cluster_name = "${var.project_name}-ecs-${var.environment}"
   services = {
     image_processing = {
-      subnet_ids = sort(data.aws_subnets.default.ids)
+      subnet_ids       = sort(data.aws_subnets.default.ids)
+      assign_public_ip = true # Required for ECR access
       # create_task_exec_policy = false
       # create_security_group = false
       enable_autoscaling = false
