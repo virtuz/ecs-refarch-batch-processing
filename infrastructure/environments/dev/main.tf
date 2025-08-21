@@ -158,7 +158,7 @@ module "metric_alarm" {
   statistic          = "Average"
   threshold          = 5
   unit               = "Count"
-  alarm_actions      = ["arn:aws:autoscaling:us-west-2:435236256477:scalingPolicy:93b8e209-d4d3-43f3-b894-c071cc669e4b:resource/ecs/service/ecs-refarch-batch-processing-ecs-dev/image_processing:policyName/step5"] # manually created
+  # alarm_actions      = ["arn:aws:autoscaling:us-west-2:435236256477:scalingPolicy:93b8e209-d4d3-43f3-b894-c071cc669e4b:resource/ecs/service/ecs-refarch-batch-processing-ecs-dev/image_processing:policyName/step5"] # manually created
   # lifecycle {
   #   ignore_changes = [alarm_actions]
   # }

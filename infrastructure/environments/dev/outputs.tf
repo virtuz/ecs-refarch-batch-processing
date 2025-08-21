@@ -41,7 +41,7 @@ output "cloudwatch_metric_alarm_id" {
 
 output "subnets" {
   description = "List of subnets in the VPC"
-  value       = data.aws_subnets.default.ids
+  value       = sort(data.aws_subnets.default.ids)
 }
 output "autoscaling_policies" {
   description = "ECS service autoscaling policies"
