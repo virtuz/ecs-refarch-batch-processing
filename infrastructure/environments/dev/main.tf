@@ -58,36 +58,49 @@ module "sqs" {
   }
 }
 # ECSCluster - An ECS cluster.
+data "aws_subnets" "default" {}
 module "ecs" {
   source       = "terraform-aws-modules/ecs/aws"
   version      = "6.2.2"
   cluster_name = "${var.project_name}-ecs-${var.environment}"
+  # # Cluster capacity providers
+  # default_capacity_provider_strategy = {
+  #   FARGATE = {
+  #     weight = 50
+  #     base   = 20
+  #   }
+  #   FARGATE_SPOT = {
+  #     weight = 50
+  #   }
+  # }
   services = {
-    image-processing = {
+    image_processing = {
+      subnet_ids = data.aws_subnets.default.ids
       container_definitions = {
-        name      = "worker"
-        cpu       = 10
-        memory    = 300
-        essential = true
-        image     = var.docker_image
-        environment = [
-          {
-            name  = "s3OutputBucket"
-            value = module.output_s3_bucket.s3_bucket_id
-          },
-          {
-            name  = "s3InputBucket"
-            value = module.input_s3_bucket.s3_bucket_id
-          },
-          {
-            name  = "AWSRegion"
-            value = var.aws_region
-          },
-          {
-            name  = "SQSBatchQueue"
-            value = module.sqs.queue_name
-          }
-        ]
+        worker = {
+          cpu       = 10
+          memory    = 300
+          essential = true
+          image     = var.docker_image
+          environment = [
+            {
+              name  = "s3OutputBucket"
+              value = module.output_s3_bucket.s3_bucket_id
+            },
+            {
+              name  = "s3InputBucket"
+              value = module.input_s3_bucket.s3_bucket_id
+            },
+            {
+              name  = "AWSRegion"
+              value = var.aws_region
+            },
+            {
+              name  = "SQSBatchQueue"
+              value = module.sqs.queue_name
+            }
+          ]
+        }
       }
     }
   }
@@ -114,6 +127,7 @@ module "metric_alarm" {
 # ECSAutoScalingGroup - An Auto Scaling group used to create your instances.
 # InstanceSecurityGroup - Security Group to which your instances are added.
 # TaskDefinition - An ECS task definition that is started by the ECS service. The ECS task schedules a Docker container that copies the uploaded object and creates a thumbnail and a resized (1024x768) image file in the output S3 bucket.
+# ###Step 4: Create the ECS Service Go to the ECS Console in your AWS Account and create an ECS Service choosing the ECS Cluster and Task definition created by the CloudFormation template. Give the service a name and set the number of desired tasks to deploy as part of the service. For this example, you can configure the basic service parameters.
 # module "ecs_container_definition" {
 #   source = "terraform-aws-modules/ecs/aws//modules/container-definition"
 

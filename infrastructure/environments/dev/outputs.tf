@@ -38,3 +38,8 @@ output "cloudwatch_metric_alarm_id" {
   description = "CloudWatch metric alarm ID"
   value       = module.metric_alarm.cloudwatch_metric_alarm_id
 }
+
+output "subnets" {
+  description = "List of subnets in the VPC"
+  value       = data.aws_subnets.default.ids
+}
