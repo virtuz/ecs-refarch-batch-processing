@@ -13,3 +13,8 @@ output "s3_input_bucket_name" {
   description = "S3 bucket name for input images"
   value       = module.input_s3_bucket.s3_bucket_id
 }
+
+output "s3_output_bucket_name" {
+  description = "S3 bucket name for output images"
+  value       = module.output_s3_bucket.s3_bucket_id
+}
