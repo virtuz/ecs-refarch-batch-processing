@@ -14,7 +14,7 @@
 # permissions and limitations under the License.
 import os
 import json
-import urllib
+from urllib.parse import unquote_plus
 import boto3
 from PIL import Image
 from PIL.ExifTags import TAGS
@@ -48,7 +48,7 @@ def process_images():
         print(message)
         try:
             message_content = json.loads(message.body)
-            image = urllib.unquote_plus(message_content
+            image = unquote_plus(message_content
                                         ['Records'][0]['s3']['object']
                                         ['key']).encode('utf-8')
             s3.download_file(input_bucket_name, image, image)
