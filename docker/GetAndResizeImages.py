@@ -44,20 +44,20 @@ def process_images():
 
     """
     for message in get_messages_from_sqs():
-        print("Processing message:")
-        print(message)
+        print(f"Processing message: {message}")
         try:
             message_content = json.loads(message.body)
+            print(f"Message content: {message_content}")
             image = unquote_plus(message_content
                                         ['Records'][0]['s3']['object']
-                                        ['key']).encode('utf-8')
+                                        ['key'])
+            print(f"Image to process: {image}")
             s3.download_file(input_bucket_name, image, image)
             resize_image(image)
             upload_image(image)
             cleanup_files(image)
         except Exception as e:
-            print("Error processing message:")
-            print(e)
+            print(f"Error processing message: {e}")
             message.change_visibility(VisibilityTimeout=0)
             continue
         else:
@@ -65,12 +65,14 @@ def process_images():
 
 
 def cleanup_files(image):
+    print("Cleaning up files for image:", image)
     os.remove(image)
     os.remove(resized_dir + '/' + image)
     os.remove(thumb_dir + '/' + image)
 
 
 def upload_image(image):
+    print("Uploading image:", image)
     s3.upload_file(resized_dir + '/' + image,
                    output_bucket_name, 'resized/' + image)
     s3.upload_file(thumb_dir + '/' + image,
@@ -88,6 +90,7 @@ def get_messages_from_sqs():
 
 
 def resize_image(image):
+    print("Resizing image:", image)
     img = Image.open(image)
     exif = img._getexif()
     if exif is not None:
@@ -100,12 +103,12 @@ def resize_image(image):
                     img = img.rotate(270)
                 if value == 8:
                     img = img.rotate(90)
-    img.thumbnail((1024, 768), Image.ANTIALIAS)
+    img.thumbnail((1024, 768), Image.Resampling.LANCZOS)
     try:
         img.save(resized_dir + '/' + image, 'JPEG', quality=100)
     except IOError as e:
         print("Unable to save resized image")
-    img.thumbnail((192, 192), Image.ANTIALIAS)
+    img.thumbnail((192, 192), Image.Resampling.LANCZOS)
     try:
         img.save(thumb_dir + '/' + image, 'JPEG')
     except IOError as e:
