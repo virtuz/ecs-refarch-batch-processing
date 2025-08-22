@@ -43,7 +43,13 @@ output "subnets" {
   description = "List of subnets in the VPC"
   value       = sort(data.aws_subnets.default.ids)
 }
-output "autoscaling_policies" {
+
+output "ecs_autoscaling_policy_arn" {
+  description = "ARN of the ECS service autoscaling policy"
+  value       = module.ecs.services.image_processing.autoscaling_policies.queue_depth.arn
+}
+
+output "ecs_autoscaling_policies" {
   description = "ECS service autoscaling policies"
   value       = module.ecs.services.image_processing.autoscaling_policies
 }

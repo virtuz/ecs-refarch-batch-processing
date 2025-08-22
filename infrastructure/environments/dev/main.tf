@@ -132,15 +132,25 @@ module "ecs" {
         }
       ]
       # create_security_group = false
-      enable_autoscaling = false
-      # autoscaling_policies = {
-      #   queue_depth = {
-      #     policy_type = "TargetTrackingScaling"
-      #     target_tracking_scaling_policy_configuration = {
-
-      #     }
-      #   }
-      # }
+      enable_autoscaling = true
+      autoscaling_policies = {
+        queue_depth = {
+          name        = "step5"
+          policy_type = "StepScaling"
+          step_scaling_policy_configuration = {
+            adjustment_type          = "ChangeInCapacity"
+            cooldown                 = 60
+            metric_aggregation_type  = "Average"
+            min_adjustment_magnitude = 0
+            step_adjustment = [
+              {
+                metric_interval_lower_bound = 0
+                scaling_adjustment          = 1
+              }
+            ]
+          }
+        }
+      }
       container_definitions = {
         worker = {
           cpu                    = 10
@@ -195,7 +205,7 @@ module "metric_alarm" {
   statistic          = "Average"
   threshold          = 5
   unit               = "Count"
-  # alarm_actions      = ["arn:aws:autoscaling:us-west-2:435236256477:scalingPolicy:93b8e209-d4d3-43f3-b894-c071cc669e4b:resource/ecs/service/ecs-refarch-batch-processing-ecs-dev/image_processing:policyName/step5"] # manually created
+  alarm_actions      = [module.ecs.services.image_processing.autoscaling_policies.queue_depth.arn]
   # lifecycle {
   #   ignore_changes = [alarm_actions]
   # }
@@ -205,3 +215,47 @@ module "metric_alarm" {
 # InstanceSecurityGroup - Security Group to which your instances are added.
 # ECSServiceRole - An IAM role assumed by the ECS service, which gives the service the right to register instances to an Elastic Load Balancer if needed.
 # EC2Role - An IAM role assumed by the EC2 instances, which gives them the right to register themselves with the ECS services.
+# ###Step 5: Update the ECS Service to configure Auto Scaling In this step you will configure auto scaling for the service you created in step 4.
+# arn:aws:iam::435236256477:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
+locals {
+  service_namespace  = "ecs"
+  resource_id        = "service/${module.ecs.cluster_name}/${module.ecs.services.image_processing.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  ecs_target_id      = "${local.service_namespace}/${local.resource_id}/${local.scalable_dimension}"
+  ecs_policy_id      = "${local.service_namespace}/${local.resource_id}/${local.scalable_dimension}/step5"
+}
+import {
+  to = module.ecs.module.service["image_processing"].aws_appautoscaling_target.this[0]
+  id = "ecs/service/ecs-refarch-batch-processing-ecs-dev/image_processing/ecs:service:DesiredCount"
+}
+# resource "aws_appautoscaling_target" "ecs_target" {
+#   max_capacity       = 3
+#   min_capacity       = 1
+#   resource_id        = local.resource_id
+#   scalable_dimension = local.scalable_dimension
+#   service_namespace  = local.service_namespace
+# }
+import {
+  to = module.ecs.module.service["image_processing"].aws_appautoscaling_policy.this["queue_depth"]
+  id = "ecs/service/ecs-refarch-batch-processing-ecs-dev/image_processing/ecs:service:DesiredCount/step5"
+}
+# resource "aws_appautoscaling_policy" "ecs_policy" {
+#   name               = "step5"
+#   policy_type        = "StepScaling"
+#   resource_id        = aws_appautoscaling_target.ecs_target.resource_id
+#   scalable_dimension = aws_appautoscaling_target.ecs_target.scalable_dimension
+#   service_namespace  = aws_appautoscaling_target.ecs_target.service_namespace
+
+#   step_scaling_policy_configuration {
+#     adjustment_type         = "ChangeInCapacity"
+#     cooldown                = 60
+#     metric_aggregation_type = "Average"
+#     min_adjustment_magnitude = 0
+
+#     step_adjustment {
+#       metric_interval_lower_bound = 0
+#       # metric_interval_upper_bound = 0
+#       scaling_adjustment          = 1
+#     }
+#   }
+# }
