@@ -107,10 +107,11 @@ module "ecs" {
       # }
       container_definitions = {
         worker = {
-          cpu       = 10
-          memory    = 300
-          essential = true
-          image     = var.docker_image
+          cpu                    = 10
+          memory                 = 300
+          essential              = true
+          image                  = var.docker_image
+          readonlyRootFilesystem = false
           environment = [
             {
               name  = "s3OutputBucket"
