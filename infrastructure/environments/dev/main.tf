@@ -96,9 +96,9 @@ module "ecs" {
       subnet_ids = sort(data.aws_subnets.default.ids)
       # assign_public_ip = true # Required for ECR access
       # create_task_exec_policy = false
-      task_iam_role_name      = "ECSTaskRole"     # This role allows your application code (on the container) to use other AWS services.
+      tasks_iam_role_name     = "ECSTaskRole"     # This role allows your application code (on the container) to use other AWS services.
       task_exec_iam_role_name = "ECSTaskExecRole" # This role allows Amazon ECS to use other AWS services on your behalf.
-      iam_role_statements = [{
+      tasks_iam_role_statements = [{
         sid       = "S3ReadAccess"
         effect    = "Allow"
         actions   = ["s3:GetObject"]
