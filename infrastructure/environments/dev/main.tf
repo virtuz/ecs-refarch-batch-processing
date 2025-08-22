@@ -85,6 +85,7 @@ module "sqs" {
 # ECSCluster - An ECS cluster.
 # TaskDefinition - An ECS task definition that is started by the ECS service. The ECS task schedules a Docker container that copies the uploaded object and creates a thumbnail and a resized (1024x768) image file in the output S3 bucket.
 # ###Step 4: Create the ECS Service Go to the ECS Console in your AWS Account and create an ECS Service choosing the ECS Cluster and Task definition created by the CloudFormation template. Give the service a name and set the number of desired tasks to deploy as part of the service. For this example, you can configure the basic service parameters.
+# ECSTaskRole - An IAM role assumed by the ECS task. This role gives the Docker container the right to upload and fetch objects to and from S3 as well as read and delete messages from the SQS queue. By using an ECS task role, the underlying EC2 instances do not need to be given access rights to the resources that the container uses. For more information about IAM roles for tasks, see IAM Roles for Tasks.
 data "aws_subnets" "default" {}
 module "ecs" {
   source       = "terraform-aws-modules/ecs/aws"
@@ -95,6 +96,38 @@ module "ecs" {
       subnet_ids = sort(data.aws_subnets.default.ids)
       # assign_public_ip = true # Required for ECR access
       # create_task_exec_policy = false
+      task_exec_iam_statements = [{
+        sid       = "S3ReadAccess"
+        effect    = "Allow"
+        actions   = ["s3:GetObject"]
+        resources = ["*"]
+        },
+        {
+          sid       = "S3WriteAccess"
+          effect    = "Allow"
+          actions   = ["s3:PutObject"]
+          resources = ["arn:aws:s3:::${module.output_s3_bucket.s3_bucket_id}/*"]
+        },
+        {
+          sid    = "SQSReadAccess"
+          effect = "Allow"
+          actions = [
+            "sqs:ListQueues",
+            "sqs:GetQueueUrl",
+          ]
+          resources = ["*"]
+        },
+        {
+          sid    = "SQSWriteAccess"
+          effect = "Allow"
+          actions = [
+            "sqs:DeleteMessage",
+            "sqs:ReceiveMessage",
+            "sqs:ChangeMessageVisibility",
+          ]
+          resources = [module.sqs.queue_arn]
+        }
+      ]
       # create_security_group = false
       enable_autoscaling = false
       # autoscaling_policies = {
@@ -169,4 +202,3 @@ module "metric_alarm" {
 # InstanceSecurityGroup - Security Group to which your instances are added.
 # ECSServiceRole - An IAM role assumed by the ECS service, which gives the service the right to register instances to an Elastic Load Balancer if needed.
 # EC2Role - An IAM role assumed by the EC2 instances, which gives them the right to register themselves with the ECS services.
-# ECSTaskRole - An IAM role assumed by the ECS task. This role gives the Docker container the right to upload and fetch objects to and from S3 as well as read and delete messages from the SQS queue. By using an ECS task role, the underlying EC2 instances do not need to be given access rights to the resources that the container uses. For more information about IAM roles for tasks, see IAM Roles for Tasks.
