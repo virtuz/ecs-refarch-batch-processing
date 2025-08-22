@@ -44,6 +44,8 @@ def process_images():
 
     """
     for message in get_messages_from_sqs():
+        print("Processing message:")
+        print(message)
         try:
             message_content = json.loads(message.body)
             image = urllib.unquote_plus(message_content
@@ -53,7 +55,9 @@ def process_images():
             resize_image(image)
             upload_image(image)
             cleanup_files(image)
-        except:
+        except Exception as e:
+            print("Error processing message:")
+            print(e)
             message.change_visibility(VisibilityTimeout=0)
             continue
         else:
@@ -109,6 +113,7 @@ def resize_image(image):
 
 
 def main():
+    print("Starting image processing...")
     create_dirs()
     while True:
         process_images()
