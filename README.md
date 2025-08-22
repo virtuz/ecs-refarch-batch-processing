@@ -134,7 +134,8 @@ In order practise, GitHub action pipelines and terraform code going to be added.
 - [x] github actions: create pipeline to build and publish image
 - [x] terraform: add all resources mentioned in reference architecture
 - [ ] github actions: create manual pipeline to upload image from provided url to input s3
-- [ ] end to end testing
+- [x] end to end testing
+- [ ] solve chicken and egg problem: terraform needs docker image which published into ecr created by terraform 
 
 ### Running the example
 Follow these steps to run the template.
@@ -186,7 +187,7 @@ gh secret set AWS_ROLE_ARN --body $(\
 )
 ```
 
-#### Step ?: Create whole dev env via terraform
+#### Step 4: Setup terraform and trigger github actions pipeline
 ```bash
 # Save the backend config to a file
 aws cloudformation describe-stacks \
@@ -194,14 +195,41 @@ aws cloudformation describe-stacks \
   --query 'Stacks[0].Outputs[?OutputKey==`TerraformBackendConfig`].OutputValue' \
   --output text > environments/dev/backend.tf
 
-# Move to dev env directory
+# Commit change
+git commit -am "spin up infrastructure"
+
+# Trigger pipeline by pushing changes
+git push
+```
+
+#### Step 5: Test
+```bash
+# Move to terraform directory
 cd environments/dev
 
 # Initialize terraform
 terraform init
 
-# Create whole infrastructure
-terraform apply
+# get s3 bucket name
+s3_input_bucket_name=$(terraform output -raw s3_input_bucket_name)
+
+# get some jpg file, e.g.
+curl -o /tmp/sample.jpg https://file-examples.com/storage/fef6248bef689f7bb9c274f/2017/10/file_example_JPG_100kB.jpg
+
+# duplicate test data
+for i in {00..99}; do cp /tmp/sample.jpg /tmp/sample_copy_$i.jpg; done
+
+# upload test data to s3
+aws s3 sync /tmp s3://$s3_input_bucket_name/ --exclude "*" --include "sample_copy_*.jpg"
+```
+
+#### Step 99: Clean up resources
+```bash
+# clean up terrafrom resources
+terraform destroy
+
+# clean up cloudformation resources
+aws cloudformation delete-stacks --stack-name bootstrap
 ```
 
 ### Useful references
