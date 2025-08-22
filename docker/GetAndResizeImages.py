@@ -18,6 +18,7 @@ from urllib.parse import unquote_plus
 import boto3
 from PIL import Image
 from PIL.ExifTags import TAGS
+from time import sleep
 
 resized_dir = '/images/resized'
 thumb_dir = '/images/thumbs'
@@ -44,10 +45,10 @@ def process_images():
 
     """
     for message in get_messages_from_sqs():
-        print(f"Processing message: {message}")
+        # print(f"Processing message: {message}")
         try:
             message_content = json.loads(message.body)
-            print(f"Message content: {message_content}")
+            # print(f"Message content: {message_content}")
             image = unquote_plus(message_content
                                         ['Records'][0]['s3']['object']
                                         ['key'])
@@ -65,14 +66,14 @@ def process_images():
 
 
 def cleanup_files(image):
-    print("Cleaning up files for image:", image)
+    # print("Cleaning up files for image:", image)
     os.remove(image)
     os.remove(resized_dir + '/' + image)
     os.remove(thumb_dir + '/' + image)
 
 
 def upload_image(image):
-    print("Uploading image:", image)
+    # print("Uploading image:", image)
     s3.upload_file(resized_dir + '/' + image,
                    output_bucket_name, 'resized/' + image)
     s3.upload_file(thumb_dir + '/' + image,
@@ -90,7 +91,7 @@ def get_messages_from_sqs():
 
 
 def resize_image(image):
-    print("Resizing image:", image)
+    # print("Resizing image:", image)
     img = Image.open(image)
     exif = img._getexif()
     if exif is not None:
@@ -119,7 +120,10 @@ def main():
     print("Starting image processing...")
     create_dirs()
     while True:
+        print("Processing images...")
         process_images()
+        print("Sleeping for 60 seconds...")
+        sleep(60) # sleep for a minute
 
 
 if __name__ == "__main__":
