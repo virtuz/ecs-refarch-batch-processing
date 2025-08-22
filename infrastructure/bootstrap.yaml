@@ -166,6 +166,7 @@ Resources:
                   - iam:TagInstanceProfile
                   - iam:UntagInstanceProfile
                   - iam:ListInstanceProfileTags
+                  - iam:ListInstanceProfilesForRole
                 Resource: 
                   - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
                   - !Sub 'arn:aws:iam::${AWS::AccountId}:instance-profile/*'
