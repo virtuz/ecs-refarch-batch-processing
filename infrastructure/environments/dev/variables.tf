@@ -30,5 +30,5 @@ variable "aws_region" {
 variable "docker_image" {
   description = "Docker image to use for the ECS task"
   type        = string
-  default     = "435236256477.dkr.ecr.us-west-2.amazonaws.com/ecs-refarch-batch-processing-ecr-dev:feature-github-actions-terraform-f486ccf"
+  default     = "435236256477.dkr.ecr.us-west-2.amazonaws.com/ecs-refarch-batch-processing-ecr-dev:feature-github-actions-terraform-cd0ed05"
 }
