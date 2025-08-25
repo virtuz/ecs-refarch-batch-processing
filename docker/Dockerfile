@@ -1,8 +1,8 @@
-FROM ubuntu:16.04
+FROM ubuntu:22.04
 
 RUN apt-get update
-RUN apt-get install -y python-pip python-imaging
-RUN pip install awscli boto3
+RUN apt-get install -y python3-pip
+RUN pip install awscli boto3 pillow
 
 ADD GetAndResizeImages.py /
 

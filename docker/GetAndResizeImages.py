@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2016 Amazon.com, Inc. or its
 # affiliates. All Rights Reserved.
 #
@@ -14,10 +14,11 @@
 # permissions and limitations under the License.
 import os
 import json
-import urllib
+from urllib.parse import unquote_plus
 import boto3
 from PIL import Image
 from PIL.ExifTags import TAGS
+from time import sleep
 
 resized_dir = '/images/resized'
 thumb_dir = '/images/thumbs'
@@ -44,16 +45,20 @@ def process_images():
 
     """
     for message in get_messages_from_sqs():
+        # print(f"Processing message: {message}")
         try:
             message_content = json.loads(message.body)
-            image = urllib.unquote_plus(message_content
+            # print(f"Message content: {message_content}")
+            image = unquote_plus(message_content
                                         ['Records'][0]['s3']['object']
-                                        ['key']).encode('utf-8')
+                                        ['key'])
+            print(f"Image to process: {image}")
             s3.download_file(input_bucket_name, image, image)
             resize_image(image)
             upload_image(image)
             cleanup_files(image)
-        except:
+        except Exception as e:
+            print(f"Error processing message: {e}")
             message.change_visibility(VisibilityTimeout=0)
             continue
         else:
@@ -61,12 +66,14 @@ def process_images():
 
 
 def cleanup_files(image):
+    # print("Cleaning up files for image:", image)
     os.remove(image)
     os.remove(resized_dir + '/' + image)
     os.remove(thumb_dir + '/' + image)
 
 
 def upload_image(image):
+    # print("Uploading image:", image)
     s3.upload_file(resized_dir + '/' + image,
                    output_bucket_name, 'resized/' + image)
     s3.upload_file(thumb_dir + '/' + image,
@@ -84,6 +91,7 @@ def get_messages_from_sqs():
 
 
 def resize_image(image):
+    # print("Resizing image:", image)
     img = Image.open(image)
     exif = img._getexif()
     if exif is not None:
@@ -96,12 +104,12 @@ def resize_image(image):
                     img = img.rotate(270)
                 if value == 8:
                     img = img.rotate(90)
-    img.thumbnail((1024, 768), Image.ANTIALIAS)
+    img.thumbnail((1024, 768), Image.Resampling.LANCZOS)
     try:
         img.save(resized_dir + '/' + image, 'JPEG', quality=100)
     except IOError as e:
         print("Unable to save resized image")
-    img.thumbnail((192, 192), Image.ANTIALIAS)
+    img.thumbnail((192, 192), Image.Resampling.LANCZOS)
     try:
         img.save(thumb_dir + '/' + image, 'JPEG')
     except IOError as e:
@@ -109,9 +117,13 @@ def resize_image(image):
 
 
 def main():
+    print("Starting image processing...")
     create_dirs()
     while True:
+        print("Processing images...")
         process_images()
+        print("Sleeping for 60 seconds...")
+        sleep(60) # sleep for a minute
 
 
 if __name__ == "__main__":

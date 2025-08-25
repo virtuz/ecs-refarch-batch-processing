@@ -123,3 +123,129 @@ The following sections explain all of the resources created by the CloudFormatio
 
 ##License
 This reference architecture sample is licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
+## Alternative implementation
+In order practise, GitHub action pipelines and terraform code going to be added.
+
+### Plan
+- [x] bootstrap terraform: create s3 bucket / dynamo db for terraform state
+- [x] bootstrap github actions: create pipeline to run terraform plan/apply
+- [x] terraform: add ECR registry
+- [x] github actions: create pipeline to build and publish image
+- [x] terraform: add all resources mentioned in reference architecture
+- [ ] github actions: create manual pipeline to upload image from provided url to input s3
+- [x] end to end testing
+- [ ] solve chicken and egg problem: terraform needs docker image which published into ecr created by terraform 
+- [x] automate setup of PrivateLink Interface Endpoints (ecr.api/dkr, sqs, logs/monitoring) 
+
+### Running the example
+Follow these steps to run the template.
+
+#### Step 0: Prerequsites
+```bash
+# Install AWS CLI
+sudo snap install aws-cli
+
+# Configuring command completion in the AWS CLI
+echo 'complete -C /snap/aws-cli/current/bin/aws_completer aws' >> ~/.bashrc
+
+# Then configure your credentials
+aws configure
+
+# Install GitHub CLI if not already installed
+sudo snap install gh
+
+# Authenticate with GitHub
+gh auth login
+```
+
+#### Step 1: Clone the Github repository
+To run the entire example, first fork the source repository, using the following command:
+```bash
+gh repo fork virtuz/ecs-refarch-batch-processing
+```
+
+#### Step 2: Bootstrap foundational AWS resources via CloudFormation
+```bash
+# Move to infrastructure directory
+cd ecs-refarch-batch-processing/infrastructure
+
+# Create foundational AWS resources
+aws cloudformation create-stack \
+  --stack-name bootstrap \
+  --template-body file://bootstrap.yaml \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+#### Step 3: Setup GitHub actions
+```bash
+# Add the secret
+gh secret set AWS_ROLE_ARN --body $(\
+  aws cloudformation describe-stacks \
+    --stack-name bootstrap \
+    --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
+    --output text \
+)
+```
+
+#### Step 4: Setup terraform and trigger github actions pipeline
+```bash
+# Save the backend config to a file
+aws cloudformation describe-stacks \
+  --stack-name bootstrap \
+  --query 'Stacks[0].Outputs[?OutputKey==`TerraformBackendConfig`].OutputValue' \
+  --output text > environments/dev/backend.tf
+
+# Pass Terraform Format Check
+terraform fmt -recursive
+
+# Trigger Docker Image pipeline as well
+echo $(date) > ../docker/TriggerGitHubActionsWorkflowRun
+
+# Commit change
+git commit -am "Work In Progress: spin up infrastructure"
+
+# Trigger pipeline by pushing changes
+git push
+```
+
+#### Step 5: Test
+```bash
+# Move to terraform directory
+cd environments/dev
+
+# Initialize terraform
+terraform init -reconfigure
+
+# get s3 bucket name
+s3_input_bucket_name=$(terraform output -raw s3_input_bucket_name)
+
+# get some jpg file, e.g.
+curl -o /tmp/sample.jpg https://file-examples.com/storage/fef6248bef689f7bb9c274f/2017/10/file_example_JPG_100kB.jpg
+
+# duplicate test data
+for i in {00..99}; do cp /tmp/sample.jpg /tmp/sample_copy_$i.jpg; done
+
+# upload test data to s3
+aws s3 sync /tmp s3://$s3_input_bucket_name/ --exclude "*" --include "sample_copy_*.jpg"
+```
+
+#### Step 99: Clean up resources
+```bash
+# clean up terrafrom resources
+terraform destroy
+
+# clean up cloudformation resources
+aws cloudformation delete-stacks --stack-name bootstrap
+```
+
+### Useful references
+- https://docs.aws.amazon.com/cli/
+- https://docs.aws.amazon.com/cloudformation/
+- https://docs.github.com/en/actions
+- https://aws.amazon.com/blogs/security/use-iam-roles-to-connect-github-actions-to-actions-in-aws/
+- https://aws.amazon.com/blogs/security/techniques-for-writing-least-privilege-iam-policies/
+- https://aws.amazon.com/blogs/devops/integrating-with-github-actions-ci-cd-pipeline-to-deploy-a-web-app-to-amazon-ec2/
+- https://docs.aws.amazon.com/prescriptive-guidance/latest/terraform-aws-provider-best-practices/overview.html
+- https://docs.aws.amazon.com/AmazonECS/latest/developerguide/vpc-endpoints.html
+- https://aws.github.io/copilot-cli/docs/overview/
