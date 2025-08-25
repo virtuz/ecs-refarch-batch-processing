@@ -136,7 +136,7 @@ In order practise, GitHub action pipelines and terraform code going to be added.
 - [ ] github actions: create manual pipeline to upload image from provided url to input s3
 - [x] end to end testing
 - [ ] solve chicken and egg problem: terraform needs docker image which published into ecr created by terraform 
-- [ ] automate setup of PrivateLink Interface Endpoints (ecr.api/dkr, sqs, logs/monitoring) 
+- [x] automate setup of PrivateLink Interface Endpoints (ecr.api/dkr, sqs, logs/monitoring) 
 
 ### Running the example
 Follow these steps to run the template.
@@ -203,7 +203,7 @@ terraform fmt -recursive
 echo $(date) > ../docker/TriggerGitHubActionsWorkflowRun
 
 # Commit change
-git commit -am "spin up infrastructure"
+git commit -am "Work In Progress: spin up infrastructure"
 
 # Trigger pipeline by pushing changes
 git push
@@ -215,7 +215,7 @@ git push
 cd environments/dev
 
 # Initialize terraform
-terraform init
+terraform init -reconfigure
 
 # get s3 bucket name
 s3_input_bucket_name=$(terraform output -raw s3_input_bucket_name)
@@ -248,3 +248,4 @@ aws cloudformation delete-stacks --stack-name bootstrap
 - https://aws.amazon.com/blogs/devops/integrating-with-github-actions-ci-cd-pipeline-to-deploy-a-web-app-to-amazon-ec2/
 - https://docs.aws.amazon.com/prescriptive-guidance/latest/terraform-aws-provider-best-practices/overview.html
 - https://docs.aws.amazon.com/AmazonECS/latest/developerguide/vpc-endpoints.html
+- https://aws.github.io/copilot-cli/docs/overview/
