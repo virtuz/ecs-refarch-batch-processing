@@ -3,6 +3,7 @@ module "ecr" {
   version                         = "3.0.0"
   repository_name                 = "${var.project_name}-ecr-${var.environment}"
   repository_image_tag_mutability = "MUTABLE"
+  repository_force_delete         = true
   repository_lifecycle_policy = jsonencode({
     rules = [
       {
@@ -23,9 +24,10 @@ module "ecr" {
 }
 # myS3InputBucket - An S3 bucket where objects (images with a .jpg suffix) can be uploaded to trigger the resize.
 module "input_s3_bucket" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.5.0"
-  bucket  = "${var.project_name}-input-${var.environment}"
+  source        = "terraform-aws-modules/s3-bucket/aws"
+  version       = "5.5.0"
+  bucket        = "${var.project_name}-input-${var.environment}"
+  force_destroy = true
 }
 # ###Step 3: Create the S3 event trigger for the SQS queue
 module "input_s3_bucket_notification" {
@@ -42,9 +44,10 @@ module "input_s3_bucket_notification" {
 }
 # myS3OutputBucket - An S3 bucket where resized objects are stored with keys thumbs/ and resized/.
 module "output_s3_bucket" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.5.0"
-  bucket  = "${var.project_name}-output-${var.environment}"
+  source        = "terraform-aws-modules/s3-bucket/aws"
+  version       = "5.5.0"
+  bucket        = "${var.project_name}-output-${var.environment}"
+  force_destroy = true
 }
 # SQSQueue - A SQS queue that holds messages containing the name of the uploaded object.
 module "sqs" {
@@ -55,6 +58,7 @@ module "sqs" {
   create_dlq = true
 }
 # ECSCluster - An ECS cluster.
+data "aws_vpc" "default" {}
 data "aws_subnets" "default" {}
 module "ecs" {
   source       = "terraform-aws-modules/ecs/aws"
@@ -148,6 +152,15 @@ module "ecs" {
           ]
         }
       }
+      security_group_ingress_rules = {
+        https = {
+          description = "The security group attached to the VPC endpoint must allow incoming connections on port 443 from the private subnet of the VPC."
+          from_port   = 443
+          to_port     = 443
+          ip_protocol = "tcp"
+          cidr_ipv4   = data.aws_vpc.default.cidr_block
+        }
+      }
       security_group_egress_rules = {
         all = {
           ip_protocol = "-1"
@@ -176,6 +189,35 @@ module "metric_alarm" {
   threshold          = 5
   unit               = "Count"
   alarm_actions      = [module.ecs.services.image_processing.autoscaling_policies.queue_depth.arn]
+}
+# VPC Endpoints
+# VPC Endpoint for ECR API and Docker Registry
+resource "aws_vpc_endpoint" "ecr" {
+  for_each            = toset(["api", "dkr"])
+  vpc_id              = data.aws_vpc.default.id
+  service_name        = "com.amazonaws.${var.aws_region}.ecr.${each.key}"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = sort(data.aws_subnets.default.ids)
+  security_group_ids  = [module.ecs.services.image_processing.security_group_id]
+  private_dns_enabled = true
+}
+# VPC Endpoint for SQS
+resource "aws_vpc_endpoint" "sqs" {
+  vpc_id              = data.aws_vpc.default.id
+  service_name        = "com.amazonaws.${var.aws_region}.sqs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = sort(data.aws_subnets.default.ids)
+  security_group_ids  = [module.ecs.services.image_processing.security_group_id]
+  private_dns_enabled = true
+}
+# VPC Endpoint for CloudWatch Logs
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id              = data.aws_vpc.default.id
+  service_name        = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = sort(data.aws_subnets.default.ids)
+  security_group_ids  = [module.ecs.services.image_processing.security_group_id]
+  private_dns_enabled = true
 }
 # Did not created below mentioned resources since task runs on fargate instead of ec2
 # ECSAutoScalingGroup - An Auto Scaling group used to create your instances.

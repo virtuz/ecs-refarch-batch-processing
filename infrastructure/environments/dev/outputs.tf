@@ -38,6 +38,11 @@ output "cloudwatch_metric_alarm_id" {
   value       = module.metric_alarm.cloudwatch_metric_alarm_id
 }
 
+output "vpc_cidr" {
+  description = "CIDR block of the VPC"
+  value       = data.aws_vpc.default.cidr_block
+}
+
 output "subnets" {
   description = "List of subnets in the VPC"
   value       = sort(data.aws_subnets.default.ids)
@@ -51,4 +56,9 @@ output "ecs_autoscaling_policy_arn" {
 output "ecs_autoscaling_policies" {
   description = "ECS service autoscaling policies"
   value       = module.ecs.services.image_processing.autoscaling_policies
+}
+
+output "ecs_security_group_id" {
+  description = "ID of the ECS service security group"
+  value       = module.ecs.services.image_processing.security_group_id
 }

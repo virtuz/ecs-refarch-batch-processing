@@ -136,6 +136,7 @@ In order practise, GitHub action pipelines and terraform code going to be added.
 - [ ] github actions: create manual pipeline to upload image from provided url to input s3
 - [x] end to end testing
 - [ ] solve chicken and egg problem: terraform needs docker image which published into ecr created by terraform 
+- [ ] automate setup of PrivateLink Interface Endpoints (ecr.api/dkr, sqs, logs/monitoring) 
 
 ### Running the example
 Follow these steps to run the template.
@@ -195,6 +196,12 @@ aws cloudformation describe-stacks \
   --query 'Stacks[0].Outputs[?OutputKey==`TerraformBackendConfig`].OutputValue' \
   --output text > environments/dev/backend.tf
 
+# Pass Terraform Format Check
+terraform fmt -recursive
+
+# Trigger Docker Image pipeline as well
+echo $(date) > ../docker/TriggerGitHubActionsWorkflowRun
+
 # Commit change
 git commit -am "spin up infrastructure"
 
@@ -240,3 +247,4 @@ aws cloudformation delete-stacks --stack-name bootstrap
 - https://aws.amazon.com/blogs/security/techniques-for-writing-least-privilege-iam-policies/
 - https://aws.amazon.com/blogs/devops/integrating-with-github-actions-ci-cd-pipeline-to-deploy-a-web-app-to-amazon-ec2/
 - https://docs.aws.amazon.com/prescriptive-guidance/latest/terraform-aws-provider-best-practices/overview.html
+- https://docs.aws.amazon.com/AmazonECS/latest/developerguide/vpc-endpoints.html
